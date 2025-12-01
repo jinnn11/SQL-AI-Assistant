@@ -4,6 +4,7 @@ import pandas as pd
 import google.generativeai as genai
 import os
 
+
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="SQL AI Assistant", page_icon="🤖")
 

@@ -2,11 +2,12 @@ import psycopg2
 import psycopg2.extras 
 import os
 from dotenv import load_dotenv
+import datetime 
+
 
 # --- CONFIGURATION ---
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
-print(DATABASE_URL)
 DATA_FILENAME = 'data.csv' 
 
 def create_connection():
@@ -308,7 +309,6 @@ def step10_get_product_dict(conn):
 
 def step11_create_orderdetail_table(data_filename, conn):
     print("--- Step 11: OrderDetail (Optimized for Cloud) ---")
-    import datetime 
     customer_to_customerid = step6_get_customer_dict(conn)
     product_to_productid = step10_get_product_dict(conn)
 

@@ -4,9 +4,8 @@ import pandas as pd
 import google.generativeai as genai
 import os
 
-
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="SQL AI Assistant", page_icon="🤖")
+st.set_page_config(page_title="SQL AI Assistant", page_icon="🤖", layout="wide")
 
 # --- SECURITY: LOAD SECRETS ---
 try:
@@ -31,23 +30,59 @@ def check_password():
             st.session_state["password_correct"] = False
 
     if "password_correct" not in st.session_state:
-        st.text_input("Enter Password:", type="password", on_change=password_entered, key="password")
+        # Centered login box
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.text_input("Enter Password:", type="password", on_change=password_entered, key="password")
         return False
     elif not st.session_state["password_correct"]:
-        st.text_input("Enter Password:", type="password", on_change=password_entered, key="password")
-        st.error("😕 Password incorrect")
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.text_input("Enter Password:", type="password", on_change=password_entered, key="password")
+            st.error("😕 Password incorrect")
         return False
     else:
         return True
 
 # --- MAIN APP ---
 if check_password():
+    
+    # --- SIDEBAR: DATABASE INFO ---
+    with st.sidebar:
+        st.header("📂 Database Schema")
+        st.markdown("""
+        **Context:** This is a Sales Database for a global retail company.
+        
+        **Tables Available:**
+        
+        🌍 **Geography**
+        - `Region` (Region names)
+        - `Country` (Linked to Regions)
+        
+        👤 **Customers**
+        - `Customer` (Names, Address, City)
+        
+        📦 **Inventory**
+        - `ProductCategory` (Category names)
+        - `Product` (Items & Unit Prices)
+        
+        🛒 **Transactions**
+        - `OrderDetail` (Who bought what, when, and how much)
+        
+        ---
+        **💡 Example Questions:**
+        - *Rank the countries by total sales amount.*
+        - *Who are the top 5 customers?*
+        - *What is the total revenue for the 'Beverages' category?*
+        """)
+
+    # --- MAIN CONTENT AREA ---
     st.title("🤖 SQL AI Assistant")
-    st.write("Ask a question about the sales database.")
+    st.markdown("Enter your question below, and I will generate the SQL and fetch the data for you.")
 
-    user_question = st.text_area("Question:", "Rank the countries by total sales amount.")
+    user_question = st.text_area("Question:", "Rank the countries by total sales amount.", height=100)
 
-    if st.button("Generate & Run Query"):
+    if st.button("Generate & Run Query", type="primary"):
         with st.spinner("Thinking..."):
             try:
                 # 1. DEFINE SCHEMA FOR AI
@@ -68,16 +103,17 @@ if check_password():
                 3. Return ONLY the SQL query. No markdown formatting (no ```sql), just the raw text.
                 """
 
-                # 2. ASK GEMINI
+                # 2. ASK GEMINI (Fixed Model Name)
                 model = genai.GenerativeModel('gemini-2.5-flash')
                 prompt = f"{schema_context}\n\nQuestion: {user_question}"
                 
                 response = model.generate_content(prompt)
                 
-                # Clean up response (Gemini sometimes adds markdown blocks)
+                # Clean up response
                 sql_query = response.text.replace("```sql", "").replace("```", "").strip()
                 
-                st.subheader("Generated SQL:")
+                # Layout: Split Query and Results
+                st.subheader("Generated SQL Query:")
                 st.code(sql_query, language="sql")
 
                 # 3. EXECUTE ON RENDER DATABASE
@@ -86,8 +122,8 @@ if check_password():
                 conn.close()
 
                 # 4. SHOW RESULTS
-                st.subheader("Results:")
-                st.dataframe(df)
+                st.subheader("Query Results:")
+                st.dataframe(df, use_container_width=True)
 
             except Exception as e:
                 st.error(f"An error occurred: {e}")
